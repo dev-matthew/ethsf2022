@@ -3,6 +3,7 @@ import { WorldIDWidget } from '@worldcoin/id';
 import { defaultAbiCoder as ABI } from 'ethers/lib/utils';
 import { useState } from 'react';
 import verify from './verify.png';
+import MainABI from './Main.json';
 
 function App() {
 
@@ -11,6 +12,7 @@ function App() {
   const [chain_id, set_chain_id] = useState('');
   const [network_status, set_network_status] = useState('Not Connected');
   const {ethereum} = window;
+  const [verification, setVerification] = useState();
 
   const networks = {
     "0x1": "ETH Mainnet",
@@ -28,6 +30,7 @@ function App() {
     let { merkle_root, nullifier_hash, proof } = verification;
     let depackedProof = ABI.decode(['uint256[8]'], proof)[0];
     console.log(depackedProof);
+    setVerification({merkle_root, nullifier_hash, depackedProof});
   }
 
   async function handleConnect(new_account) {
@@ -57,6 +60,15 @@ function App() {
     .then(data => {
       console.log(data.data.items);
     });
+  }
+
+  async function handleTransaction() {
+    // eslint-disable-next-line no-undef
+    let metamask_web3 = new Web3(window.ethereum);
+    let metamask_contract = new metamask_web3.eth.Contract(MainABI, "0xf24D9124C6005719F6a04CcB7B47e814F27A100c");
+
+    let {merkle_root, nullifier_hash, depackedProof} = verification;
+    await metamask_contract.methods.verifyAndExecute(account, merkle_root, nullifier_hash, depackedProof, document.getElementById("input_address")).send({from: account, gas: 3000000})
   }
 
   window.onload = async function() {
@@ -93,8 +105,9 @@ function App() {
           debug={true}
         />
       </div>
-      <button id="verify_button"><img id="verify_image" src={verify}/>Verify ENS</button>
+      <button id="verify_button" onClick={handleTransaction}><img id="verify_image" src={verify}/>Verify ENS</button>
     </div>
+    
   );
 }
 
