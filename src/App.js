@@ -2,9 +2,7 @@ import './App.css';
 import { WorldIDWidget } from '@worldcoin/id';
 import { defaultAbiCoder as ABI } from 'ethers/lib/utils';
 import { useState } from 'react';
-import { Wallet } from 'ethers';
-
-//0x13881
+import verify from './verify.png';
 
 function App() {
 
@@ -34,6 +32,7 @@ function App() {
 
   async function handleConnect(new_account) {
     set_account(new_account);
+    document.getElementById("input_address").value = new_account;
     set_wallet_status("Connected as " + new_account.substring(0,6) + "..." + new_account.slice(-4));
     let connected_chain = await ethereum.request({method: "eth_chainId"});
     set_chain_id(connected_chain);
@@ -49,6 +48,15 @@ function App() {
     } catch(error) {
       console.error(error);
     }
+  }
+
+  async function handleQuery() {
+    let query_address = document.getElementById("input_address").value;
+    fetch(`https://api.covalenthq.com/v1/1/address/${query_address}/balances_v2/?quote-currency=USD&format=JSON&nft=true&no-nft-fetch=false&key=ckey_79c997c7e8084e0f9df0af9824c`)
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.data.items);
+    });
   }
 
   window.onload = async function() {
@@ -73,13 +81,19 @@ function App() {
         <div id='network_status_text'>{network_status}</div>
       </div>
 
-      <WorldIDWidget 
-        actionId='wid_staging_98fe2043489b113103d09c334475f84a'
-        signal='sign-in-staging'
-        onSuccess={(verificationResponse) => handleVerification(verificationResponse)}
-        onError={(error) => console.error(error)}
-        debug={true}
-      />
+      <input id="input_address" placeholder="Enter an address..."></input>
+      <button id="address_search" onClick={handleQuery}>Query</button>
+
+      <div id="world_id_widget_wrapper">
+        <WorldIDWidget 
+          actionId='wid_staging_98fe2043489b113103d09c334475f84a'
+          signal='sign-in-staging'
+          onSuccess={(verificationResponse) => handleVerification(verificationResponse)}
+          onError={(error) => console.error(error)}
+          debug={true}
+        />
+      </div>
+      <button id="verify_button"><img id="verify_image" src={verify}/>Verify ENS</button>
     </div>
   );
 }
